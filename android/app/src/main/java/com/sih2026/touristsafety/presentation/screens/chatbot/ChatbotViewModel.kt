@@ -91,37 +91,40 @@ class ChatbotViewModel @Inject constructor() : ViewModel() {
                     val requestBodyJson = org.json.JSONObject()
                     requestBodyJson.put("contents", contentsArray)
 
-                    val apiKey = com.sih2026.touristsafety.utils.GeminiApiKeys.getNextKey()
-                    val urlStr = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=$apiKey"
-                    val url = java.net.URL(urlStr)
-                    val connection = url.openConnection() as java.net.HttpURLConnection
-                    connection.requestMethod = "POST"
-                    connection.setRequestProperty("Content-Type", "application/json")
-                    connection.doOutput = true
-                    
-                    connection.outputStream.use { os ->
-                        val input = requestBodyJson.toString().toByteArray(Charsets.UTF_8)
-                        os.write(input, 0, input.size)
+                    com.sih2026.touristsafety.utils.GeminiApiKeys.executeWithRetry { apiKey ->
+                        val urlStr = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=$apiKey"
+                        val url = java.net.URL(urlStr)
+                        val connection = url.openConnection() as java.net.HttpURLConnection
+                        connection.requestMethod = "POST"
+                        connection.setRequestProperty("Content-Type", "application/json")
+                        connection.connectTimeout = 15000
+                        connection.readTimeout = 30000
+                        connection.doOutput = true
+                        
+                        connection.outputStream.use { os ->
+                            val input = requestBodyJson.toString().toByteArray(Charsets.UTF_8)
+                            os.write(input, 0, input.size)
+                        }
+                        
+                        val responseCode = connection.responseCode
+                        val responseString = if (responseCode in 200..299) {
+                            connection.inputStream.bufferedReader().use { it.readText() }
+                        } else {
+                            connection.errorStream.bufferedReader().use { it.readText() }
+                        }
+                        
+                        if (responseCode !in 200..299) {
+                            throw Exception("API Error: $responseCode - $responseString")
+                        }
+                        
+                        val responseJson = org.json.JSONObject(responseString)
+                        responseJson.getJSONArray("candidates")
+                            .getJSONObject(0)
+                            .getJSONObject("content")
+                            .getJSONArray("parts")
+                            .getJSONObject(0)
+                            .getString("text")
                     }
-                    
-                    val responseCode = connection.responseCode
-                    val responseString = if (responseCode in 200..299) {
-                        connection.inputStream.bufferedReader().use { it.readText() }
-                    } else {
-                        connection.errorStream.bufferedReader().use { it.readText() }
-                    }
-                    
-                    if (responseCode !in 200..299) {
-                        throw Exception("API Error: $responseCode - $responseString")
-                    }
-                    
-                    val responseJson = org.json.JSONObject(responseString)
-                    responseJson.getJSONArray("candidates")
-                        .getJSONObject(0)
-                        .getJSONObject("content")
-                        .getJSONArray("parts")
-                        .getJSONObject(0)
-                        .getString("text")
                 }
 
                 val assistantResponse = ChatMessage(

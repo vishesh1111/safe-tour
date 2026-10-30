@@ -29,7 +29,8 @@ async def extract_document_info(file: UploadFile = File(...)):
         gemini_file = genai.upload_file(temp_file_path)
         
         # Initialize the model
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        from services.key_rotator import key_manager
+        model = genai.GenerativeModel('gemini-3.6-flash')
         
         prompt = """
         Analyze this image of a document (passport, visa, flight ticket, hotel booking, id card, etc.).
@@ -49,7 +50,9 @@ async def extract_document_info(file: UploadFile = File(...)):
         If a field is not found, return an empty string for it.
         """
         
-        response = model.generate_content([prompt, gemini_file])
+        response = key_manager.execute_with_retry(
+            lambda _: model.generate_content([prompt, gemini_file])
+        )
         
         # Parse the JSON response
         text_resp = response.text.strip()

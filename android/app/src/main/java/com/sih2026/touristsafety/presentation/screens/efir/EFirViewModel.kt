@@ -44,12 +44,6 @@ class EFirViewModel @Inject constructor(
     private val _attachedEvidence = MutableStateFlow<List<Uri>>(emptyList())
     val attachedEvidence: StateFlow<List<Uri>> = _attachedEvidence.asStateFlow()
 
-    // Setup Gemini
-    private val generativeModel = GenerativeModel(
-        modelName = "gemini-3.6-flash",
-        apiKey = com.sih2026.touristsafety.utils.GeminiApiKeys.getNextKey()
-    )
-
     fun setRawDescription(desc: String) {
         _rawDescription.value = desc
     }
@@ -108,7 +102,13 @@ class EFirViewModel @Inject constructor(
                     "To,\nThe Station House Officer,\n[Police Station Name], [District].\n\nSubject: Formal Complaint regarding [Incident Type] under Section [BNS Sections].\n\nRespected Sir/Madam,\nI, the undersigned complainant [Name/Tourist], resident of [Address/Hotel], do hereby state that on [Date/Time] at [Place]... [chronological narrative].\n\nTherefore, I humbly request your good office to register an FIR under relevant provisions of the Bharatiya Nyaya Sanhita (BNS), 2023, and initiate an urgent investigation to recover my belongings and apprehend the culprits.\n\nYours faithfully,\n[Complainant Name]"
                 """.trimIndent()
 
-                val response = generativeModel.generateContent(prompt)
+                val response = com.sih2026.touristsafety.utils.GeminiApiKeys.executeWithRetry { apiKey ->
+                    val model = GenerativeModel(
+                        modelName = "gemini-3.6-flash",
+                        apiKey = apiKey
+                    )
+                    model.generateContent(prompt)
+                }
                 val responseText = response.text?.trim()?.removePrefix("```json")?.removeSuffix("```")?.trim() ?: "{}"
                 
                 val json = JSONObject(responseText)

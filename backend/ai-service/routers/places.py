@@ -41,8 +41,10 @@ Example:
   {{"id": "p1", "name": "India Gate", "type": "monument", "latitude": 28.6129, "longitude": 77.2295, "distance": 1.2, "rating": 4.8}}
 ]
 """
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(prompt)
+        from services.key_rotator import key_manager
+        response = key_manager.execute_with_retry(
+            lambda _: genai.GenerativeModel('gemini-3.6-flash').generate_content(prompt)
+        )
         text = response.text.strip()
         # Strip potential markdown blocks if Gemini ignores the prompt
         if text.startswith("```json"):

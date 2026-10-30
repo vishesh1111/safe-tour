@@ -24,7 +24,11 @@ data class StructuredFir(
     val distanceFromPs: String = "",
     val formalComplaintLetter: String = "",
     val digitalHash: String = "",
-    val qrCodeBase64: String = ""
+    val qrCodeBase64: String = "",
+    val evidenceSceneDescription: String = "",
+    val detectedEvidenceObjects: List<String> = emptyList(),
+    val evidenceSeverity: String = "Moderate",
+    val photosCount: Int = 0
 )
 
 

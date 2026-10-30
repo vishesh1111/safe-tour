@@ -36,7 +36,9 @@ android {
         buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
         
         val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
+        val geminiApiKeys = localProperties.getProperty("GEMINI_API_KEYS") ?: geminiApiKey
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+        buildConfigField("String", "GEMINI_API_KEYS", "\"$geminiApiKeys\"")
     }
 
     buildTypes {

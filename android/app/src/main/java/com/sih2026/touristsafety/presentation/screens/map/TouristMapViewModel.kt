@@ -42,11 +42,6 @@ class TouristMapViewModel @Inject constructor() : ViewModel() {
     private val _selectedTab = MutableStateFlow(0)
     val selectedTab: StateFlow<Int> = _selectedTab.asStateFlow()
 
-    private val generativeModel = com.google.ai.client.generativeai.GenerativeModel(
-        modelName = "gemini-3.6-flash",
-        apiKey = com.sih2026.touristsafety.utils.GeminiApiKeys.getNextKey()
-    )
-
     init {
         loadDangerZones()
         loadTourists()
@@ -144,7 +139,13 @@ class TouristMapViewModel @Inject constructor() : ViewModel() {
             val prompt = "Given the coordinates ${loc.latitude}, ${loc.longitude}, return a JSON array of up to 6 nearby emergency services (hospitals and police stations). Use keys: id, name, type ('hospital' or 'police'), latitude, longitude, rating. Return ONLY valid JSON array without formatting."
             
             val response = withContext(Dispatchers.IO) {
-                generativeModel.generateContent(prompt)
+                com.sih2026.touristsafety.utils.GeminiApiKeys.executeWithRetry { apiKey ->
+                    val model = com.google.ai.client.generativeai.GenerativeModel(
+                        modelName = "gemini-3.6-flash",
+                        apiKey = apiKey
+                    )
+                    model.generateContent(prompt)
+                }
             }
             
             val responseBody = response.text?.trim()?.removePrefix("```json")?.removeSuffix("```")?.trim() ?: "[]"

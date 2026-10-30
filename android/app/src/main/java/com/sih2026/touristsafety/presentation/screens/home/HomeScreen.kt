@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -404,6 +405,7 @@ fun HomeScreen(
             // Quick Actions Grid
             val quickActions = listOf(
                 QuickActionItem("Emergency", Icons.Default.Phone, Screen.EmergencyContacts.route),
+                QuickActionItem("AR Safe Route", Icons.Default.Navigation, Screen.ARNavigation.route),
                 QuickActionItem("Report", Icons.Default.CameraAlt, Screen.IncidentReport.route),
                 QuickActionItem("Assistant", Icons.Default.Chat, Screen.Chatbot.route),
                 QuickActionItem("Connect", Icons.Default.People, Screen.Connect.route),

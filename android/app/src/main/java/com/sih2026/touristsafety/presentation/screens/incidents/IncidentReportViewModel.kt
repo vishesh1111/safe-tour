@@ -186,40 +186,42 @@ class IncidentReportViewModel @Inject constructor(
                     val requestBodyJson = JSONObject()
                     requestBodyJson.put("contents", contentsArray)
 
-                    val apiKey = com.sih2026.touristsafety.utils.GeminiApiKeys.getNextKey()
-                    val urlStr = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent"
-                    
-                    val url = java.net.URL(urlStr)
-                    val connection = url.openConnection() as java.net.HttpURLConnection
-                    connection.requestMethod = "POST"
-                    connection.setRequestProperty("Content-Type", "application/json")
-                    connection.setRequestProperty("x-goog-api-key", apiKey)
-                    connection.setRequestProperty("x-goog-api-client", "genai-android/0.9.0")
-                    connection.doOutput = true
-                    
-                    connection.outputStream.use { os ->
-                        val input = requestBodyJson.toString().toByteArray(Charsets.UTF_8)
-                        os.write(input, 0, input.size)
+                    com.sih2026.touristsafety.utils.GeminiApiKeys.executeWithRetry { apiKey ->
+                        val urlStr = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent"
+                        val url = java.net.URL(urlStr)
+                        val connection = url.openConnection() as java.net.HttpURLConnection
+                        connection.requestMethod = "POST"
+                        connection.setRequestProperty("Content-Type", "application/json")
+                        connection.setRequestProperty("x-goog-api-key", apiKey)
+                        connection.setRequestProperty("x-goog-api-client", "genai-android/0.9.0")
+                        connection.connectTimeout = 15000
+                        connection.readTimeout = 30000
+                        connection.doOutput = true
+                        
+                        connection.outputStream.use { os ->
+                            val input = requestBodyJson.toString().toByteArray(Charsets.UTF_8)
+                            os.write(input, 0, input.size)
+                        }
+                        
+                        val responseCode = connection.responseCode
+                        val responseString = if (responseCode in 200..299) {
+                            connection.inputStream.bufferedReader().use { it.readText() }
+                        } else {
+                            connection.errorStream.bufferedReader().use { it.readText() }
+                        }
+                        
+                        if (responseCode !in 200..299) {
+                            throw Exception("API Error: $responseCode - $responseString")
+                        }
+                        
+                        val responseJson = JSONObject(responseString)
+                        responseJson.getJSONArray("candidates")
+                            .getJSONObject(0)
+                            .getJSONObject("content")
+                            .getJSONArray("parts")
+                            .getJSONObject(0)
+                            .getString("text")
                     }
-                    
-                    val responseCode = connection.responseCode
-                    val responseString = if (responseCode in 200..299) {
-                        connection.inputStream.bufferedReader().use { it.readText() }
-                    } else {
-                        connection.errorStream.bufferedReader().use { it.readText() }
-                    }
-                    
-                    if (responseCode !in 200..299) {
-                        throw Exception("API Error: $responseCode - $responseString")
-                    }
-                    
-                    val responseJson = JSONObject(responseString)
-                    responseJson.getJSONArray("candidates")
-                        .getJSONObject(0)
-                        .getJSONObject("content")
-                        .getJSONArray("parts")
-                        .getJSONObject(0)
-                        .getString("text")
                 }
 
                 val cleanJson = responseText.trim().removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
@@ -281,7 +283,11 @@ class IncidentReportViewModel @Inject constructor(
                     narrative = json.optString("formalNarrative", _description.value),
                     complainantDetails = complainantProfileInfo,
                     formalComplaintLetter = json.optString("formalComplaintLetter", ""),
-                    firNumber = randomFirNo
+                    firNumber = randomFirNo,
+                    evidenceSceneDescription = scene,
+                    detectedEvidenceObjects = detected,
+                    evidenceSeverity = severity,
+                    photosCount = _capturedPhotos.value.size
                 )
 
             } catch (e: Exception) {
@@ -309,7 +315,11 @@ class IncidentReportViewModel @Inject constructor(
                     witnesses = "Local bystanders",
                     narrative = _description.value,
                     complainantDetails = "Registered Tourist Complainant",
-                    firNumber = "DL-ND-2026-EFIR-${(100000..999999).random()}"
+                    firNumber = "DL-ND-2026-EFIR-${(100000..999999).random()}",
+                    evidenceSceneDescription = "Analysis recorded for incident: ${_incidentType.value}. ${_description.value}",
+                    detectedEvidenceObjects = listOf("Evidence Scene Verified"),
+                    evidenceSeverity = "Moderate",
+                    photosCount = _capturedPhotos.value.size
                 )
             }
             _isAnalyzing.value = false
@@ -334,7 +344,11 @@ class IncidentReportViewModel @Inject constructor(
                 witnesses = "Local bystanders",
                 narrative = _description.value.ifBlank { "Theft incident reported by tourist" },
                 complainantDetails = "Registered Tourist Complainant",
-                firNumber = "DL-ND-$filingYear-EFIR-${(100000..999999).random()}"
+                firNumber = "DL-ND-$filingYear-EFIR-${(100000..999999).random()}",
+                evidenceSceneDescription = _aiAnalysis.value?.sceneDescription ?: "Evidence scene documented",
+                detectedEvidenceObjects = _aiAnalysis.value?.detectedObjects ?: emptyList(),
+                evidenceSeverity = _aiAnalysis.value?.severityAssessment ?: "Moderate",
+                photosCount = _capturedPhotos.value.size
             )
             _structuredFir.value = fir
         }

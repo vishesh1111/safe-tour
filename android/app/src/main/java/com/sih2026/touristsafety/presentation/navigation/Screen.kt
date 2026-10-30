@@ -29,4 +29,5 @@ sealed class Screen(val route: String) {
     object Track : Screen("track")
     object NearbySOS : Screen("nearby_sos")
     object StartJourney : Screen("start_journey")
+    object ARNavigation : Screen("ar_navigation")
 }

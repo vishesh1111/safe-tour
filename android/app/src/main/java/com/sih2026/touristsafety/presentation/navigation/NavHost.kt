@@ -88,7 +88,8 @@ fun TouristSafetyNavHost(
         composable(Screen.Map.route) {
             TouristMapScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToCrowdDensity = { navController.navigate(Screen.CrowdDensity.route) }
+                onNavigateToCrowdDensity = { navController.navigate(Screen.CrowdDensity.route) },
+                onNavigateToARNavigation = { navController.navigate(Screen.ARNavigation.route) }
             )
         }
 
@@ -208,6 +209,13 @@ fun TouristSafetyNavHost(
         // Start Journey (Session-Based Monitoring)
         composable(Screen.StartJourney.route) {
             com.sih2026.touristsafety.presentation.screens.journey.StartJourneyScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // AR Safe-Route Navigation
+        composable(Screen.ARNavigation.route) {
+            com.sih2026.touristsafety.presentation.screens.arnavigation.ARNavigationScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

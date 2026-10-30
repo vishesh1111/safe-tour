@@ -35,7 +35,8 @@ import androidx.compose.ui.text.font.FontWeight
 fun TouristMapScreen(
     viewModel: TouristMapViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
-    onNavigateToCrowdDensity: () -> Unit = {}
+    onNavigateToCrowdDensity: () -> Unit = {},
+    onNavigateToARNavigation: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
@@ -113,6 +114,9 @@ fun TouristMapScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToARNavigation) {
+                        Icon(Icons.Default.Navigation, contentDescription = "AR Navigation", tint = Color(0xFF00E676))
+                    }
                     IconButton(onClick = onNavigateToCrowdDensity) {
                         Icon(Icons.Default.Group, contentDescription = "Crowd Density")
                     }

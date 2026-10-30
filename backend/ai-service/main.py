@@ -11,10 +11,14 @@ load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialize Gemini client
-    gemini_key = os.getenv("GEMINI_API_KEY")
-    if gemini_key:
-        genai.configure(api_key=gemini_key)
+    # Initialize Gemini client & key pool
+    try:
+        from services.key_rotator import key_manager
+        key_manager.reload_keys()
+        if key_manager._keys:
+            genai.configure(api_key=key_manager.get_next_key())
+    except Exception as e:
+        print(f"Key manager initialization notice: {e}")
     yield
     # Cleanup if needed
 
